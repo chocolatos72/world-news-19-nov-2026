@@ -2,8 +2,8 @@
 """THE WORLD TODAY - Thursday 19 November 2026, on one page.
 
 A program that draws a one-page newspaper front page summing up the
-world's news of Thursday 19 November 2026: 12 main stories with supplied
-illustrations (art/sceneN.png), a world map drawn from real
+world's news of Thursday 19 November 2026: 12 main stories with flat
+vector illustrations drawn in code, a world map drawn from real
 longitude/latitude outlines, and the remaining 28 stories as a two-column
 list with coloured bullets.
 
@@ -30,13 +30,13 @@ OCEAN = (110, 165, 210)
 GRID = (200, 210, 220)
 
 REGION = {
-    "ASIA": (225, 45, 45),
-    "EUROPE": (45, 110, 205),
-    "MIDEAST": (200, 125, 0),
-    "AMERICAS": (30, 160, 80),
-    "AFRICA": (190, 105, 35),
-    "OCEANIA": (140, 80, 190),
-    "GLOBAL": (28, 58, 96),
+    "ASIA": (205, 60, 60),
+    "EUROPE": (60, 110, 190),
+    "MIDEAST": (185, 130, 40),
+    "AMERICAS": (50, 150, 85),
+    "AFRICA": (175, 110, 55),
+    "OCEANIA": (135, 95, 180),
+    "GLOBAL": (40, 65, 100),
 }
 REGION_NAME = {
     "ASIA": "ASIA", "EUROPE": "EUROPE", "MIDEAST": "MIDEAST",
@@ -93,7 +93,7 @@ FONT = {
 "d": ("....#", "....#", ".####", "#...#", "#...#", "#...#", ".####"),
 "e": (".....", ".....", ".###.", "#...#", "#####", "#....", ".###."),
 "f": ("..##.", ".#...", ".#...", "####.", ".#...", ".#...", ".#..."),
-"g": (".....", ".####", "#...#", "#...#", ".####", "....#", ".###."),
+"g": (".....", ".....", ".####", "#...#", ".####", "....#", ".###."),
 "h": ("#....", "#....", "####.", "#...#", "#...#", "#...#", "#...#"),
 "i": ("..#..", ".....", ".##..", "..#..", "..#..", "..#..", ".###."),
 "j": ("...#.", ".....", "..##.", "...#.", "...#.", "#..#.", ".##.."),
@@ -102,8 +102,8 @@ FONT = {
 "m": (".....", ".....", "##.#.", "#.#.#", "#.#.#", "#.#.#", "#.#.#"),
 "n": (".....", ".....", "####.", "#...#", "#...#", "#...#", "#...#"),
 "o": (".....", ".....", ".###.", "#...#", "#...#", "#...#", ".###."),
-"p": (".....", "####.", "#...#", "#...#", "####.", "#....", "#...."),
-"q": (".....", ".####", "#...#", "#...#", ".####", "....#", "....#"),
+"p": (".....", ".....", "####.", "#...#", "####.", "#....", "#...."),
+"q": (".....", ".....", ".####", "#...#", ".####", "....#", "....#"),
 "r": (".....", ".....", "#.##.", "##..#", "#....", "#....", "#...."),
 "s": (".....", ".....", ".####", "#....", ".###.", "....#", "####."),
 "t": (".#...", ".#...", "####.", ".#...", ".#...", ".#...", "..##."),
@@ -111,7 +111,7 @@ FONT = {
 "v": (".....", ".....", "#...#", "#...#", "#...#", ".#.#.", "..#.."),
 "w": (".....", ".....", "#...#", "#.#.#", "#.#.#", "#.#.#", ".#.#."),
 "x": (".....", ".....", "#...#", ".#.#.", "..#..", ".#.#.", "#...#"),
-"y": (".....", "#...#", "#...#", "#...#", ".####", "....#", ".###."),
+"y": (".....", ".....", "#...#", "#...#", ".####", "....#", ".###."),
 "z": (".....", ".....", "#####", "...#.", "..#..", ".#...", "#####"),
 ".": (".....", ".....", ".....", ".....", ".....", ".##..", ".##.."),
 ",": (".....", ".....", ".....", ".....", ".##..", "..#..", ".#..."),
@@ -294,96 +294,358 @@ def write_png(img, path):
     return len(png)
 
 
-# ------------------------------------------------------------ supplied art
-# The 12 main-story pictures are supplied artwork, chosen by Sari from
-# three AI-rendered versions of this page: image 1 for scenes 1-4 and
-# 6-12, image 3 for the GTA scene 5, whose logo in image 1 came out
-# garbled. They live in art/sceneN.png, pre-sized to the exact scene
-# rectangles, so the program only has to decode and paste them. No text
-# is drawn inside any picture.
-
-def load_png(path):
-    """Decode a small 8-bit non-interlaced PNG (RGB or RGBA) to
-    (width, height, rgb bytes). Standard library only."""
-    data = open(path, "rb").read()
-    assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG: %s" % path
-    pos = 8
-    w = h = None
-    bitdepth = ctype = None
-    idat = b""
-    while pos < len(data):
-        ln = struct.unpack(">I", data[pos:pos + 4])[0]
-        typ = data[pos + 4:pos + 8]
-        chunk = data[pos + 8:pos + 8 + ln]
-        if typ == b"IHDR":
-            w, h, bitdepth, ctype = struct.unpack(">IIBB", chunk[:10])
-            assert bitdepth == 8 and ctype in (2, 6), "need 8-bit RGB/RGBA PNG"
-        elif typ == b"IDAT":
-            idat += chunk
-        elif typ == b"IEND":
-            break
-        pos += 12 + ln
-    raw = zlib.decompress(idat)
-    ch = 3 if ctype == 2 else 4
-    stride = w * ch
-    out = bytearray(w * h * 3)
-    prev = bytearray(stride)
-    p = 0
-    for y in range(h):
-        f = raw[p]
-        p += 1
-        line = bytearray(raw[p:p + stride])
-        p += stride
-        if f == 1:
-            for i in range(ch, stride):
-                line[i] = (line[i] + line[i - ch]) & 255
-        elif f == 2:
-            for i in range(stride):
-                line[i] = (line[i] + prev[i]) & 255
-        elif f == 3:
-            for i in range(stride):
-                a = line[i - ch] if i >= ch else 0
-                line[i] = (line[i] + ((a + prev[i]) >> 1)) & 255
-        elif f == 4:
-            for i in range(stride):
-                a = line[i - ch] if i >= ch else 0
-                b = prev[i]
-                c = prev[i - ch] if i >= ch else 0
-                pp = a + b - c
-                pa, pb, pc = abs(pp - a), abs(pp - b), abs(pp - c)
-                pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
-                line[i] = (line[i] + pr) & 255
-        for x in range(w):
-            o = (y * w + x) * 3
-            s = x * ch
-            out[o] = line[s]
-            out[o + 1] = line[s + 1]
-            out[o + 2] = line[s + 2]
-        prev = line
-    return w, h, bytes(out)
+# ------------------------------------------------------------ illustrations
+# Every scene is drawn from shapes only - no text inside any picture,
+# so nothing can come out garbled. Each takes the box it may use.
+SKY = (150, 195, 235)
+PALE = (255, 240, 180)
+SAND = (240, 200, 120)
+SEA = (40, 120, 200)
 
 
-def blit(img, x, y, w, h, art):
-    """Paste a decoded picture onto img, scaled to (w, h) by nearest
-    neighbour. The supplied art is already the exact size, so this is a
-    straight copy."""
-    aw, ah, rgb = art
-    for yy in range(h):
-        sy = min(ah - 1, yy * ah // h)
-        dy = y + yy
-        if dy < 0 or dy >= img.h:
-            continue
-        for xx in range(w):
-            sx = min(aw - 1, xx * aw // w)
-            dx = x + xx
-            if dx < 0 or dx >= img.w:
-                continue
-            o = (dy * img.w + dx) * 3
-            s = (sy * aw + sx) * 3
-            img.pix[o] = rgb[s]
-            img.pix[o + 1] = rgb[s + 1]
-            img.pix[o + 2] = rgb[s + 2]
+def scene_summit(img, x, y, w, h):
+    img.rect(x, y, w, h, SKY)
+    # three flags behind the table: US (stripes + canton), China (red + star),
+    # Russia (white-blue-red tricolour)
+    fx = x + int(w * 0.16)
+    img.rect(fx, y + int(h * 0.10), 3, int(h * 0.42), INK)
+    for i, c in enumerate(((179, 39, 46), (255, 255, 255), (179, 39, 46))):
+        img.rect(fx + 3, y + int(h * 0.10) + i * int(h * 0.055), int(w * 0.16), int(h * 0.055), c)
+    img.rect(fx + 3, y + int(h * 0.10), int(w * 0.07), int(h * 0.08), (0, 40, 104))
+    fx = x + int(w * 0.48)
+    img.rect(fx, y + int(h * 0.10), 3, int(h * 0.42), INK)
+    img.rect(fx + 3, y + int(h * 0.10), int(w * 0.16), int(h * 0.16), (222, 41, 16))
+    img.circle(fx + 3 + int(w * 0.04), y + int(h * 0.16), 3, (255, 215, 0))
+    fx = x + int(w * 0.80)
+    img.rect(fx, y + int(h * 0.10), 3, int(h * 0.42), INK)
+    for i, c in enumerate(((255, 255, 255), (0, 57, 166), (213, 0, 50))):
+        img.rect(fx + 3, y + int(h * 0.10) + i * int(h * 0.055), int(w * 0.16), int(h * 0.055), c)
+    # table
+    img.rect(x + int(w * 0.08), y + int(h * 0.62), int(w * 0.84), int(h * 0.30), (120, 50, 40))
+    img.rect(x + int(w * 0.08), y + int(h * 0.62), int(w * 0.84), 3, (150, 110, 70))
+    # three seated figures
+    for i, suit in enumerate(((27, 42, 74), (179, 39, 46), (70, 70, 78))):
+        cx = x + int(w * (0.22 + 0.28 * i))
+        img.circle(cx, y + int(h * 0.44), int(h * 0.11), (233, 196, 164))
+        img.poly([(cx - int(w * 0.11), y + int(h * 0.62)), (cx + int(w * 0.11), y + int(h * 0.62)),
+                  (cx + int(w * 0.07), y + int(h * 0.52)), (cx - int(w * 0.07), y + int(h * 0.52))], suit)
+    # microphones, name plates and a gold emblem on the table
+    for i, suit in enumerate(((27, 42, 74), (179, 39, 46), (70, 70, 78))):
+        cx = x + int(w * (0.22 + 0.28 * i))
+        mx = cx + int(w * 0.08)
+        img.line(mx, y + int(h * 0.62), mx, y + int(h * 0.52), (40, 40, 48))
+        img.circle(mx, y + int(h * 0.51), 3, (40, 40, 48))
+        img.rect(cx - int(w * 0.05), y + int(h * 0.70), int(w * 0.10), int(h * 0.08), (255, 255, 255))
+        img.rect(cx - int(w * 0.05), y + int(h * 0.70), int(w * 0.10), 2, suit)
+    img.circle(x + w // 2, y + int(h * 0.86), 4, (255, 200, 0))
+    img.rect(x + int(w * 0.08), y + int(h * 0.92), int(w * 0.84), int(h * 0.06), (179, 39, 46))
+    img.rect(x, y, int(w * 0.05), h, (30, 50, 110))
+    img.rect(x + w - int(w * 0.05), y, int(w * 0.05), h, (30, 50, 110))
 
+
+def scene_justice(img, x, y, w, h):
+    # deep navy court backdrop so the gold scales stand out
+    img.rect(x, y, w, h, (45, 65, 115))
+    img.circle(x + w // 2, y + int(h * 0.45), int(h * 0.38), (70, 95, 150))
+    for sx, sy in ((0.12, 0.15), (0.88, 0.12), (0.20, 0.80), (0.85, 0.82), (0.08, 0.45)):
+        img.circle(x + int(w * sx), y + int(h * sy), 2, (255, 255, 255))
+    gold = (255, 200, 0)
+    cx, top = x + w // 2, y + int(h * 0.14)
+    img.rect(x + int(w * 0.30), y + int(h * 0.82), int(w * 0.40), int(h * 0.10), gold)
+    img.rect(cx - 2, top, 4, int(h * 0.68), gold)
+    img.rect(x + int(w * 0.16), top, int(w * 0.68), 4, gold)
+    img.circle(cx, top, 4, gold)
+    for sgn in (-1, 1):
+        px = cx + sgn * int(w * 0.30)
+        img.line(px, top + 4, px, top + int(h * 0.30), gold)
+        img.line(px - int(w * 0.10), top + int(h * 0.30), px + int(w * 0.10), top + int(h * 0.30), gold)
+        img.poly([(px - int(w * 0.11), top + int(h * 0.30)), (px + int(w * 0.11), top + int(h * 0.30)),
+                  (px, top + int(h * 0.42))], (220, 160, 20))
+    # gavel: head, handle and sound block, lower right
+    img.rect(x + int(w * 0.72), y + int(h * 0.60), int(w * 0.16), 6, (150, 110, 40))
+    img.line(x + int(w * 0.74), y + int(h * 0.60), x + int(w * 0.88), y + int(h * 0.48), (150, 110, 40))
+    img.rect(x + int(w * 0.70), y + int(h * 0.74), int(w * 0.22), 4, (120, 82, 52))
+    for sx in (0.02, 0.92):
+        img.rect(x + int(w * sx), y + int(h * 0.20), int(w * 0.05), int(h * 0.62), (120, 140, 180))
+        img.rect(x + int(w * sx) - 3, y + int(h * 0.18), int(w * 0.05) + 6, 5, (100, 120, 160))
+
+def scene_bridge(img, x, y, w, h):
+    img.rect(x, y, w, h, SKY)
+    img.rect(x, y + int(h * 0.72), w, int(h * 0.28), SEA)
+    for i in range(4):
+        img.line(x + int(w * (0.05 + 0.25 * i)), y + int(h * 0.76), x + int(w * (0.20 + 0.25 * i)), y + int(h * 0.76), (255, 255, 255))
+    deck = y + int(h * 0.55)
+    img.rect(x + int(w * 0.04), deck, int(w * 0.34), 6, (90, 90, 96))
+    img.rect(x + int(w * 0.62), deck, int(w * 0.34), 6, (90, 90, 96))
+    img.line(x + int(w * 0.38), deck, x + int(w * 0.46), deck + int(h * 0.16), (90, 90, 96))
+    img.line(x + int(w * 0.62), deck, x + int(w * 0.54), deck + int(h * 0.16), (90, 90, 96))
+    for fx in (0.12, 0.72):
+        img.rect(x + int(w * fx), y + int(h * 0.30), 5, int(h * 0.26), (70, 70, 78))
+    img.rect(x + int(w * 0.08), deck - int(h * 0.12), int(w * 0.14), int(h * 0.12), (179, 39, 46))
+    for wx in (0.10, 0.14, 0.18):
+        img.rect(x + int(w * wx), deck - int(h * 0.09), int(w * 0.03), int(h * 0.05), (255, 255, 255))
+    img.circle(x + int(w * 0.50), y + int(h * 0.42), 6, (200, 200, 200))
+    img.circle(x + int(w * 0.52), y + int(h * 0.34), 5, (220, 220, 220))
+    img.circle(x + int(w * 0.48), y + int(h * 0.28), 4, (235, 235, 235))
+    img.line(x + int(w * 0.85), y + int(h * 0.10), x + int(w * 0.55), y + int(h * 0.45), (255, 255, 255))
+    for dx, dy, r in ((0.50, 0.30, 9), (0.55, 0.22, 7), (0.46, 0.24, 6)):
+        img.circle(x + int(w * dx), y + int(h * dy), r, (200, 200, 200))
+    img.circle(x + int(w * 0.50), y + int(h * 0.40), 5, (255, 140, 0))
+    img.rect(x + int(w * 0.66), y + int(h * 0.80), int(w * 0.18), 6, (60, 60, 70))
+    img.rect(x + int(w * 0.72), y + int(h * 0.74), int(w * 0.05), int(h * 0.06), (60, 60, 70))
+    img.line(x + int(w * 0.10), y + int(h * 0.88), x + int(w * 0.30), y + int(h * 0.88), (255, 255, 255))
+    img.line(x + int(w * 0.45), y + int(h * 0.94), x + int(w * 0.65), y + int(h * 0.94), (255, 255, 255))
+
+
+def scene_chart(img, x, y, w, h):
+    img.rect(x, y, w, h, PALE)
+    img.line(x + int(w * 0.10), y + int(h * 0.85), x + int(w * 0.92), y + int(h * 0.85), INK)
+    img.line(x + int(w * 0.10), y + int(h * 0.85), x + int(w * 0.10), y + int(h * 0.10), INK)
+    bars = [0.22, 0.38, 0.55, 0.78]
+    for i, b in enumerate(bars):
+        bx = x + int(w * (0.18 + 0.18 * i))
+        bh = int(h * b)
+        img.rect(bx, y + int(h * 0.85) - bh, int(w * 0.10), bh, (30, 120, 220) if i < 3 else (0, 180, 90))
+    img.line(x + int(w * 0.16), y + int(h * 0.66), x + int(w * 0.84), y + int(h * 0.14), (179, 39, 46))
+    img.line(x + int(w * 0.84), y + int(h * 0.14), x + int(w * 0.74), y + int(h * 0.14), (179, 39, 46))
+    img.line(x + int(w * 0.84), y + int(h * 0.14), x + int(w * 0.84), y + int(h * 0.24), (179, 39, 46))
+    img.circle(x + int(w * 0.86), y + int(h * 0.10), 5, (255, 200, 0))
+    img.rect(x + int(w * 0.10), y + int(h * 0.92), int(w * 0.80), 2, (30, 120, 220))
+    img.poly([(x + int(w * 0.12), y + int(h * 0.10)), (x + int(w * 0.16), y + int(h * 0.04)),
+              (x + int(w * 0.20), y + int(h * 0.10))], (30, 132, 73))
+
+
+def scene_controller(img, x, y, w, h):
+    img.rect(x, y, w, h, (255, 130, 50))
+    img.circle(x + int(w * 0.78), y + int(h * 0.18), int(h * 0.12), (255, 220, 120))
+    for i, bh in enumerate((0.30, 0.45, 0.38, 0.55, 0.42)):
+        bx = x + int(w * (0.06 + 0.19 * i))
+        img.rect(bx, y + h - int(h * bh), int(w * 0.14), int(h * bh), (70, 45, 110))
+        for wy in range(3):
+            img.rect(bx + 2, y + h - int(h * bh) + 4 + wy * 6, 2, 2, (255, 220, 120))
+    cy = y + int(h * 0.60)
+    img.rect(x + int(w * 0.18), cy - int(h * 0.14), int(w * 0.64), int(h * 0.30), (230, 230, 235))
+    img.circle(x + int(w * 0.18), cy, int(h * 0.14), (230, 230, 235))
+    img.circle(x + int(w * 0.82), cy, int(h * 0.14), (230, 230, 235))
+    img.rect(x + int(w * 0.26), cy - 3, 12, 6, INK)
+    img.rect(x + int(w * 0.26) + 3, cy - 9, 6, 18, INK)
+    for dx, dy, c in ((0.66, -0.05, (255, 90, 90)), (0.72, 0.02, (90, 200, 120)), (0.60, 0.02, (90, 140, 255)), (0.66, 0.09, (255, 200, 60))):
+        img.circle(x + int(w * dx), cy + int(h * dy), 4, c)
+    img.circle(x + int(w * 0.40), cy + int(h * 0.06), 5, (90, 90, 96))
+    img.circle(x + int(w * 0.52), cy - int(h * 0.06), 5, (90, 90, 96))
+    img.rect(x + int(w * 0.05), y + int(h * 0.06), int(w * 0.16), int(h * 0.20), (200, 200, 210))
+    img.circle(x + int(w * 0.13), y + int(h * 0.16), 4, (90, 140, 255))
+    img.rect(x + int(w * 0.05), y + int(h * 0.06), int(w * 0.16), 3, (179, 39, 46))
+
+
+def scene_cyclone(img, x, y, w, h):
+    import math
+    img.rect(x, y, w, h, (150, 200, 245))
+    cx, cy = x + w // 2, y + int(h * 0.42)
+    for k in range(1, 5):
+        r = int(h * 0.08 * k)
+        img.ring(cx, cy, r, (255, 255, 255), 3)
+    img.circle(cx, cy, int(h * 0.07), (90, 120, 150))
+    img.rect(x, y + int(h * 0.78), w, int(h * 0.22), SEA)
+    for i in range(5):
+        px = x + int(w * (0.08 + 0.20 * i))
+        img.line(px, y + int(h * 0.80), px + 8, y + int(h * 0.86), (255, 255, 255))
+        img.line(px + 30, y + int(h * 0.90), px + 38, y + int(h * 0.96), (255, 255, 255))
+    for i in range(6):
+        rx = x + int(w * (0.10 + 0.15 * i))
+        img.line(rx, y + int(h * 0.06), rx - 3, y + int(h * 0.12), (120, 150, 180))
+    img.line(x + int(w * 0.12), y + int(h * 0.78), x + int(w * 0.15), y + int(h * 0.58), (120, 82, 52))
+    img.line(x + int(w * 0.15), y + int(h * 0.58), x + int(w * 0.08), y + int(h * 0.54), (30, 132, 73))
+    img.line(x + int(w * 0.15), y + int(h * 0.58), x + int(w * 0.22), y + int(h * 0.54), (30, 132, 73))
+    img.line(x + int(w * 0.15), y + int(h * 0.58), x + int(w * 0.15), y + int(h * 0.50), (30, 132, 73))
+
+
+def scene_tower(img, x, y, w, h):
+    img.rect(x, y, w, h, SKY)
+    for i, bh in enumerate((0.30, 0.45, 0.35)):
+        bx = x + int(w * (0.05 + 0.30 * i))
+        img.rect(bx, y + h - int(h * bh), int(w * 0.22), int(h * bh), (90, 100, 120))
+    tx = x + int(w * 0.42)
+    img.poly([(tx, y + int(h * 0.18)), (tx + int(w * 0.16), y + int(h * 0.18)),
+              (tx + int(w * 0.13), y + h), (tx + int(w * 0.03), y + h)], (60, 70, 96))
+    for r in range(6):
+        for c in range(2):
+            img.rect(tx + 3 + c * 7, y + int(h * 0.24) + r * 10, 4, 5, (255, 220, 120))
+    bx, by = x + int(w * 0.50), y + int(h * 0.10)
+    for ang in range(0, 360, 30):
+        import math
+        ex = bx + int(14 * math.cos(math.radians(ang)))
+        ey = by + int(14 * math.sin(math.radians(ang)))
+        img.line(bx, by, ex, ey, (255, 170, 60))
+    img.circle(bx, by, 7, (255, 120, 40))
+    for dx, dy, r in ((-0.10, 0.06, 8), (0.12, 0.14, 6), (0.02, 0.02, 5)):
+        img.circle(bx + int(w * dx), by + int(h * dy), r, (190, 190, 190))
+    img.rect(x + int(w * 0.06), y + int(h * 0.45), int(w * 0.12), int(h * 0.55), (80, 90, 110))
+    for r in range(4):
+        img.rect(x + int(w * 0.08), y + int(h * 0.50) + r * 10, 4, 5, (255, 220, 120))
+    img.rect(x + int(w * 0.74), y + int(h * 0.12), int(w * 0.14), 5, (60, 60, 70))
+    img.line(x + int(w * 0.72), y + int(h * 0.12), x + int(w * 0.90), y + int(h * 0.12), (60, 60, 70))
+
+
+def scene_tents(img, x, y, w, h):
+    img.rect(x, y, w, h, (120, 180, 235))
+    img.rect(x, y + int(h * 0.72), w, int(h * 0.28), SAND)
+    for i, tc in enumerate(((255, 120, 40), (0, 165, 175), (255, 255, 255))):
+        tx = x + int(w * (0.10 + 0.30 * i))
+        tw = int(w * 0.26)
+        img.poly([(tx, y + int(h * 0.72)), (tx + tw, y + int(h * 0.72)), (tx + tw // 2, y + int(h * 0.40))], tc)
+        img.poly([(tx + tw // 2 - 5, y + int(h * 0.72)), (tx + tw // 2 + 5, y + int(h * 0.72)),
+                  (tx + tw // 2, y + int(h * 0.56))], (120, 82, 52))
+    img.rect(x + int(w * 0.72), y + int(h * 0.58), int(w * 0.18), int(h * 0.14), (150, 110, 70))
+    img.rect(x + int(w * 0.79), y + int(h * 0.58), 3, int(h * 0.14), (255, 255, 255))
+    img.rect(x + int(w * 0.72), y + int(h * 0.63), int(w * 0.18), 3, (255, 255, 255))
+    img.circle(x + int(w * 0.50), y + int(h * 0.20), 8, (255, 200, 0))
+    img.circle(x + int(w * 0.86), y + int(h * 0.14), 8, (255, 240, 180))
+    img.circle(x + int(w * 0.88), y + int(h * 0.12), 7, (120, 180, 235))
+    for i in range(5):
+        img.rect(x + int(w * (0.05 + 0.18 * i)), y + int(h * 0.86), 2, int(h * 0.10), (120, 82, 52))
+    # minaret, a small tent behind, a water tank, an olive tree
+    img.rect(x + int(w * 0.03), y + int(h * 0.30), int(w * 0.04), int(h * 0.42), (190, 170, 140))
+    img.circle(x + int(w * 0.05), y + int(h * 0.28), 4, (190, 170, 140))
+    img.rect(x + int(w * 0.02), y + int(h * 0.38), int(w * 0.06), 3, (160, 140, 110))
+    img.poly([(x + int(w * 0.55), y + int(h * 0.60)), (x + int(w * 0.69), y + int(h * 0.60)),
+              (x + int(w * 0.62), y + int(h * 0.44))], (170, 110, 210))
+    img.rect(x + int(w * 0.90), y + int(h * 0.58), int(w * 0.07), int(h * 0.14), (90, 110, 145))
+    img.rect(x + int(w * 0.90), y + int(h * 0.58), int(w * 0.07), 3, (90, 110, 130))
+    img.line(x + int(w * 0.38), y + int(h * 0.72), x + int(w * 0.38), y + int(h * 0.60), (120, 82, 52))
+    img.circle(x + int(w * 0.38), y + int(h * 0.56), 5, (60, 140, 80))
+
+
+def scene_quake(img, x, y, w, h):
+    img.rect(x, y, w, h, (255, 200, 150))
+    img.rect(x, y + int(h * 0.70), w, int(h * 0.30), (150, 120, 90))
+    bx, by = x + int(w * 0.28), y + int(h * 0.28)
+    img.poly([(bx, by), (bx + int(w * 0.30), by - 6), (bx + int(w * 0.34), y + int(h * 0.70)),
+              (bx + int(w * 0.04), y + int(h * 0.70))], (120, 120, 130))
+    for r in range(3):
+        for c in range(3):
+            img.rect(bx + 5 + c * 14, by + 8 + r * 12, 7, 7, (255, 220, 120))
+    img.line(bx + 8, by + 10, bx + 16, by + 22, INK)
+    img.line(bx + 16, by + 22, bx + 10, by + 34, INK)
+    cx = x + int(w * 0.60)
+    for i, zz in enumerate(((0.78, 0.70), (0.74, 0.62), (0.70, 0.52), (0.66, 0.42), (0.62, 0.34))):
+        img.line(x + int(w * zz[0]), y + int(h * zz[1]), x + int(w * (zz[0] + 0.06)), y + int(h * (zz[1] + 0.06)), INK)
+    for r in (8, 16, 24):
+        img.ring(cx, y + int(h * 0.55), r, (179, 39, 46), 2)
+    img.line(x + int(w * 0.72), y + int(h * 0.70), x + int(w * 0.84), y + int(h * 0.44), (70, 70, 78))
+    img.line(x + int(w * 0.80), y + int(h * 0.52), x + int(w * 0.88), y + int(h * 0.50), (70, 70, 78))
+    zig = [(0.06, 0.88), (0.12, 0.82), (0.18, 0.90), (0.24, 0.84), (0.30, 0.88), (0.36, 0.82)]
+    for i in range(len(zig) - 1):
+        img.line(x + int(w * zig[i][0]), y + int(h * zig[i][1]),
+                 x + int(w * zig[i + 1][0]), y + int(h * zig[i + 1][1]), (179, 39, 46))
+
+
+def scene_arctic(img, x, y, w, h):
+    img.rect(x, y, w, h, (70, 110, 180))
+    # aurora ribbons across the night sky, behind the land
+    for dy, c in ((0.05, (0, 230, 130)), (0.11, (180, 90, 220)), (0.17, (60, 220, 240))):
+        xs = (0.05, 0.25, 0.45, 0.65, 0.85, 0.98)
+        for i in range(len(xs) - 1):
+            y1 = y + int(h * (dy + (0.02 if i % 2 == 0 else -0.02)))
+            y2 = y + int(h * (dy + (0.02 if (i + 1) % 2 == 0 else -0.02)))
+            img.line(x + int(w * xs[i]), y1, x + int(w * xs[i + 1]), y2, c)
+    gl = [(0.30, 0.15), (0.45, 0.10), (0.62, 0.16), (0.70, 0.30), (0.66, 0.48),
+          (0.55, 0.62), (0.42, 0.58), (0.34, 0.42), (0.28, 0.28)]
+    pts = [(x + int(w * a), y + int(h * b)) for a, b in gl]
+    img.poly(pts, (255, 255, 255))
+    for i in range(len(pts)):
+        img.line(pts[i][0], pts[i][1], pts[(i + 1) % len(pts)][0], pts[(i + 1) % len(pts)][1], (120, 160, 190))
+    fx = x + int(w * 0.50)
+    img.rect(fx, y + int(h * 0.22), 2, int(h * 0.30), INK)
+    img.rect(fx + 2, y + int(h * 0.22), int(w * 0.16), int(h * 0.10), (200, 16, 46))
+    img.rect(fx + 2, y + int(h * 0.25), int(w * 0.16), 2, (255, 255, 255))
+    img.rect(fx + 2 + int(w * 0.05), y + int(h * 0.22), 2, int(h * 0.10), (255, 255, 255))
+    for i, (sx, sy) in enumerate(((0.15, 0.80), (0.80, 0.75), (0.25, 0.88), (0.70, 0.88))):
+        img.circle(x + int(w * sx), y + int(h * sy), 3, (255, 255, 255))
+    img.poly([(x + int(w * 0.10), y + int(h * 0.92)), (x + int(w * 0.26), y + int(h * 0.92)),
+              (x + int(w * 0.18), y + int(h * 0.84))], (255, 255, 255))
+    img.poly([(x + int(w * 0.72), y + int(h * 0.92)), (x + int(w * 0.88), y + int(h * 0.92)),
+              (x + int(w * 0.80), y + int(h * 0.80))], (255, 255, 255))
+    img.rect(x + int(w * 0.79), y + int(h * 0.72), 2, int(h * 0.08), INK)
+    img.rect(x + int(w * 0.79), y + int(h * 0.72), int(w * 0.08), int(h * 0.04), (200, 16, 46))
+    for sx, sy in ((0.45, 0.85), (0.60, 0.90), (0.35, 0.92)):
+        img.circle(x + int(w * sx), y + int(h * sy), 2, (255, 255, 255))
+    # a polar bear on the ice
+    bx = x + int(w * 0.14)
+    by = y + int(h * 0.80)
+    bear = (235, 238, 242)
+    img.rect(bx, by, int(w * 0.20), int(h * 0.09), bear)
+    img.circle(bx, by + int(h * 0.045), int(h * 0.045), bear)
+    img.circle(bx + int(w * 0.20), by + int(h * 0.045), int(h * 0.045), bear)
+    img.circle(bx + int(w * 0.24), by - int(h * 0.02), int(h * 0.05), bear)
+    img.circle(bx + int(w * 0.23), by - int(h * 0.06), 2, bear)
+    img.circle(bx + int(w * 0.26), by - int(h * 0.06), 2, bear)
+    img.circle(bx + int(w * 0.27), by - int(h * 0.03), 1, (40, 40, 48))
+    img.circle(bx + int(w * 0.29), by - int(h * 0.01), 2, (40, 40, 48))
+    img.rect(bx + int(w * 0.02), by + int(h * 0.09), 3, int(h * 0.06), bear)
+    img.rect(bx + int(w * 0.15), by + int(h * 0.09), 3, int(h * 0.06), bear)
+
+
+def scene_flags(img, x, y, w, h):
+    img.rect(x, y, w, h, PALE)
+    img.rect(x, y + int(h * 0.80), w, 3, INK)
+    for i, pole in enumerate((0.24, 0.68)):
+        px = x + int(w * pole)
+        img.rect(px, y + int(h * 0.18), 3, int(h * 0.62), INK)
+        fw = int(w * 0.22)
+        if i == 0:
+            img.rect(px + 3, y + int(h * 0.18), fw, int(h * 0.20), (65, 137, 221))
+            img.circle(px + 3 + fw // 2, y + int(h * 0.28), 5, (255, 255, 255))
+        else:
+            img.rect(px + 3, y + int(h * 0.18), fw, int(h * 0.05), (0, 122, 61))
+            img.rect(px + 3, y + int(h * 0.23), fw, int(h * 0.05), (255, 255, 255))
+            img.rect(px + 3, y + int(h * 0.28), fw, int(h * 0.05), (0, 0, 0))
+            img.rect(px + 3, y + int(h * 0.18), int(w * 0.05), int(h * 0.15), (200, 16, 46))
+    mx = x + w // 2
+    img.circle(mx - 8, y + int(h * 0.50), 6, (120, 120, 130))
+    img.circle(mx + 8, y + int(h * 0.50), 6, (120, 120, 130))
+    img.line(mx - 2, y + int(h * 0.50), mx + 2, y + int(h * 0.50), (179, 39, 46))
+    img.line(mx - 4, y + int(h * 0.42), mx + 4, y + int(h * 0.58), (179, 39, 46))
+    img.rect(x + int(w * 0.40), y + int(h * 0.62), int(w * 0.20), int(h * 0.12), (200, 200, 200))
+    img.rect(x + int(w * 0.40), y + int(h * 0.62), int(w * 0.20), 2, (179, 39, 46))
+    img.rect(x + int(w * 0.42), y + int(h * 0.64), int(w * 0.16), 2, (255, 255, 255))
+    img.rect(x + int(w * 0.42), y + int(h * 0.68), int(w * 0.16), 2, (255, 255, 255))
+    img.line(x + int(w * 0.30), y + int(h * 0.70), x + int(w * 0.38), y + int(h * 0.66), (30, 132, 73))
+    img.line(x + int(w * 0.38), y + int(h * 0.66), x + int(w * 0.34), y + int(h * 0.62), (30, 132, 73))
+
+
+def scene_drone(img, x, y, w, h):
+    img.rect(x, y, w, h, (255, 190, 120))
+    img.poly([(x, y + h), (x + int(w * 0.30), y + int(h * 0.45)), (x + int(w * 0.55), y + h)], (120, 100, 80))
+    img.poly([(x + int(w * 0.45), y + h), (x + int(w * 0.75), y + int(h * 0.55)), (x + w, y + h)], (100, 85, 68))
+    cx, cy = x + w // 2, y + int(h * 0.30)
+    img.rect(cx - int(w * 0.08), cy - 5, int(w * 0.16), 10, (60, 60, 70))
+    for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+        ex, ey = cx + sx * int(w * 0.20), cy + sy * int(h * 0.14)
+        img.line(cx, cy, ex, ey, (60, 60, 70))
+        img.circle(ex, ey, 6, (90, 90, 100))
+        img.line(ex - 10, ey, ex + 10, ey, (140, 140, 150))
+    img.circle(cx, cy + 8, 3, (255, 80, 80))
+    for ang in range(0, 360, 45):
+        import math
+        ex = cx + int(12 * math.cos(math.radians(ang)))
+        ey = y + int(h * 0.80) + int(12 * math.sin(math.radians(ang)))
+        img.line(cx, y + int(h * 0.80), ex, ey, (255, 140, 40))
+    img.circle(cx, y + int(h * 0.80), 5, (255, 100, 30))
+    img.ring(cx, y + int(h * 0.88), 9, (255, 255, 255), 2)
+    img.ring(cx, y + int(h * 0.88), 5, (255, 100, 30), 2)
+    img.rect(x + int(w * 0.10), y + int(h * 0.20), 10, 4, (60, 60, 70))
+    img.line(x + int(w * 0.08), y + int(h * 0.20), x + int(w * 0.18), y + int(h * 0.20), (140, 140, 150))
+    img.poly([(x + int(w * 0.86), y + int(h * 0.70)), (x + int(w * 0.94), y + int(h * 0.70)),
+              (x + int(w * 0.90), y + int(h * 0.45))], (90, 90, 100))
+
+
+SCENES = {
+    "summit": scene_summit, "justice": scene_justice, "bridge": scene_bridge,
+    "chart": scene_chart, "controller": scene_controller, "cyclone": scene_cyclone,
+    "tower": scene_tower, "tents": scene_tents, "quake": scene_quake,
+    "arctic": scene_arctic, "flags": scene_flags, "drone": scene_drone,
+}
 
 
 def tint(c, f=0.85):
@@ -398,29 +660,6 @@ def pill(img, x, y, w, h, c):
     img.rect(x + r, y, w - 2 * r, h, c)
     img.circle(x + r, y + r, r, c)
     img.circle(x + w - r - 1, y + r, r, c)
-
-
-def draw_clock(img, cx, cy, r, hour, minute):
-    """A small clock face showing hour:minute."""
-    import math
-    img.circle(cx, cy, r, (255, 255, 255))
-    img.ring(cx, cy, r, INK, 2)
-    for a in range(0, 360, 30):
-        long = (a % 90 == 0)
-        x1 = cx + int((r - 2) * math.cos(math.radians(a)))
-        y1 = cy + int((r - 2) * math.sin(math.radians(a)))
-        x2 = cx + int((r - (7 if long else 4)) * math.cos(math.radians(a)))
-        y2 = cy + int((r - (7 if long else 4)) * math.sin(math.radians(a)))
-        img.line(x1, y1, x2, y2, INK)
-    ha = math.radians((hour % 12 + minute / 60.0) * 30 - 90)
-    ma = math.radians(minute * 6 - 90)
-    hx = cx + int((r * 0.55) * math.cos(ha))
-    hy = cy + int((r * 0.55) * math.sin(ha))
-    img.line(cx, cy, hx, hy, INK)
-    img.line(cx + 1, cy, hx + 1, hy, INK)
-    img.line(cx, cy + 1, hx, hy + 1, INK)
-    img.line(cx, cy, cx + int((r * 0.85) * math.cos(ma)), cy + int((r * 0.85) * math.sin(ma)), INK)
-    img.circle(cx, cy, 2, (200, 30, 30))
 
 
 # Local times in the main-story cities at 12:00 UTC, 19 November 2026.
@@ -561,8 +800,8 @@ def draw_map(img, x, y, w, h, markers, badges):
     # story dots
     for num, lon, lat, region in markers:
         cx, cy = project(x, y, w, h, lon, lat)
-        img.circle(cx, cy, 8, (255, 255, 255))
-        img.circle(cx, cy, 7, REGION[region])
+        img.circle(cx, cy, 6, (255, 255, 255))
+        img.circle(cx, cy, 5, REGION[region])
         s = str(num)
         draw_text(img, cx - text_width(s, 1) // 2, cy - 3, s, 1, (255, 255, 255))
     # ring badges: stories per region
@@ -618,34 +857,34 @@ MAINS = [
 
 # The other 28 stories: number, place, region, headline.
 REST = [
-    (13, "SHENZHEN", "ASIA", "APEC closes with Shenzhen Outlook"),
-    (14, "SHENZHEN", "ASIA", "APEC CEOs issue Shenzhen Initiative"),
-    (15, "TOKYO", "ASIA", "India-Japan fast-track naval mast deal"),
-    (16, "ANTALYA", "ASIA", "COP31 draft drops fossil-fuel mentions"),
-    (17, "ODISHA", "ASIA", "80,000+ evacuated as Akvan nears"),
-    (18, "DHAKA", "ASIA", "Awami League lockdown; Yunus home torched"),
-    (19, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free for Indians"),
-    (20, "SHENZHEN", "ASIA", "Trump-Xi agree on Hormuz oil flow"),
+    (13, "SHENZHEN", "ASIA", "APEC closes in Shenzhen"),
+    (14, "SHENZHEN", "ASIA", "APEC CEOs' Initiative"),
+    (15, "TOKYO", "ASIA", "India-Japan naval mast deal"),
+    (16, "ANTALYA", "ASIA", "COP31 drops fossil fuels"),
+    (17, "ODISHA", "ASIA", "80,000+ flee as Akvan nears"),
+    (18, "DHAKA", "ASIA", "Awami lockdown, Yunus hit"),
+    (19, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free"),
+    (20, "SHENZHEN", "ASIA", "Trump-Xi Hormuz oil deal"),
     (21, "SHENZHEN", "ASIA", "Trump-Putin meet 40 minutes"),
-    (22, "HANGZHOU", "ASIA", "Alibaba revenue +10%, AI cloud +53%"),
-    (23, "PATIALA", "ASIA", "60m bridge collapses; drivers safe"),
-    (24, "SHENZHEN", "ASIA", "Takaichi raises detained Japanese"),
-    (25, "JAKARTA", "ASIA", "Parliament passes asset-forfeiture law"),
+    (22, "HANGZHOU", "ASIA", "Alibaba +10%, AI cloud +53%"),
+    (23, "PATIALA", "ASIA", "60m bridge falls, safe"),
+    (24, "SHENZHEN", "ASIA", "Takaichi: free Japanese"),
+    (25, "JAKARTA", "ASIA", "Parliament passes new law"),
     (26, "MANILA", "ASIA", "US unveils $2B defence loans"),
-    (27, "GAZA", "MIDEAST", "Israel ends central Gaza operation"),
+    (27, "GAZA", "MIDEAST", "Israel ends Gaza operation"),
     (28, "WEST BANK", "MIDEAST", "Israel delays E1 settlement"),
-    (29, "HORMUZ", "MIDEAST", "Iran says three tankers hit mines"),
-    (30, "PARIS", "EUROPE", "Data centres to emit 70% more by 2030"),
-    (31, "MADRID", "EUROPE", "Migrants drove half of Spain's GDP growth"),
-    (32, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m for a decade"),
-    (33, "FRANKFURT", "EUROPE", "Deutsche handled $582m Epstein deals"),
-    (34, "ZURICH", "EUROPE", "Infantino faces first FIFA challengers"),
-    (35, "TURIN", "EUROPE", "Shelton beats Jodar, nears semi-final"),
-    (36, "KYIV", "EUROPE", "Russia fires Oniks missiles, 98 drones"),
-    (37, "BERLIN", "EUROPE", "UK gives GBP 260m winter aid to Kyiv"),
+    (29, "HORMUZ", "MIDEAST", "Iran: tankers hit mines"),
+    (30, "PARIS", "EUROPE", "Data centres +70% by 2030"),
+    (31, "MADRID", "EUROPE", "Migrants drove GDP growth"),
+    (32, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m"),
+    (33, "FRANKFURT", "EUROPE", "Deutsche $582m Epstein"),
+    (34, "ZURICH", "EUROPE", "Infantino faces challengers"),
+    (35, "TURIN", "EUROPE", "Shelton beats Jodar"),
+    (36, "KYIV", "EUROPE", "Russia fires 98 drones"),
+    (37, "BERLIN", "EUROPE", "UK gives GBP 260m Kyiv aid"),
     (38, "BENTONVILLE", "AMERICAS", "Walmart Q3 beats estimates"),
-    (39, "WELLINGTON", "OCEANIA", "NZ 243/5; Nicholls 113 not out"),
-    (40, "SUVA", "OCEANIA", "Fiji declares disaster over drought"),
+    (39, "WELLINGTON", "OCEANIA", "NZ 243/5, Nicholls 113"),
+    (40, "SUVA", "OCEANIA", "Fiji drought disaster"),
 ]
 
 COUNTS = {"ASIA": 17, "EUROPE": 11, "MIDEAST": 5, "AMERICAS": 2,
@@ -667,8 +906,6 @@ def card(img, x, y, w, h, fill=(255, 255, 255)):
 
 
 def build():
-    art_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "art")
-    art = [load_png(os.path.join(art_dir, "scene%d.png" % n)) for n in range(1, 13)]
     img = Img(W, H, PAPER_TOP, PAPER_BOT)
 
     # masthead band in dark blue, with the red date box, gold count box,
@@ -690,24 +927,14 @@ def build():
     img.rect(164, 54, 440, 3, RED)
     img.rect(164, 59, 440, 1, GOLD)
 
-    # world clocks: one face per main-story city, the local time its news broke
-    draw_text(img, 14, 74, "WHEN THE", 1, INK)
-    draw_text(img, 14, 83, "NEWS", 1, INK)
-    draw_text(img, 14, 92, "BROKE", 1, (90, 100, 115))
-    for i, (city, hour, minute) in enumerate(CLOCKS):
-        cx = 190 + i * 96
-        draw_clock(img, cx, 86, 13, hour, minute)
-        label = "%s %02d:%02d" % (city, hour, minute)
-        draw_text(img, cx - text_width(label, 1) // 2, 103, label, 1, INK)
-
     # the day in numbers: six big stats, one per top story
     for i, (num, l1, l2, region) in enumerate(STATS):
         x0 = 14 + i * 123
-        card(img, x0, 114, 118, 40, tint(REGION[region], 0.88))
-        img.rect(x0, 114, 118, 3, (200, 30, 30))
-        draw_text(img, x0 + (118 - text_width(num, 2)) // 2, 118, num, 2, (200, 30, 30))
-        draw_text(img, x0 + (118 - text_width(l1, 1)) // 2, 134, l1, 1, INK)
-        draw_text(img, x0 + (118 - text_width(l2, 1)) // 2, 143, l2, 1, (90, 90, 96))
+        card(img, x0, 70, 118, 40, tint(REGION[region], 0.88))
+        img.rect(x0, 70, 118, 3, (200, 30, 30))
+        draw_text(img, x0 + (118 - text_width(num, 2)) // 2, 74, num, 2, (200, 30, 30))
+        draw_text(img, x0 + (118 - text_width(l1, 1)) // 2, 90, l1, 1, INK)
+        draw_text(img, x0 + (118 - text_width(l2, 1)) // 2, 99, l2, 1, (90, 90, 96))
 
     # region chips, counts sum to exactly 40, fitted to the full width
     widths = []
@@ -718,35 +945,35 @@ def build():
     cx = 14
     for i, region in enumerate(("ASIA", "EUROPE", "MIDEAST", "AMERICAS", "AFRICA", "OCEANIA", "GLOBAL")):
         label = "%s %d" % (REGION_NAME[region], COUNTS[region])
-        img.rect(cx, 160, widths[i], 22, REGION[region])
-        draw_text(img, cx + (widths[i] - text_width(label, 1)) // 2, 166, label, 1, (255, 255, 255))
+        img.rect(cx, 116, widths[i], 22, REGION[region])
+        draw_text(img, cx + (widths[i] - text_width(label, 1)) // 2, 122, label, 1, (255, 255, 255))
         cx += widths[i] + 6
 
     # the three big main stories, side by side and level, with roomy scenes
     for k in range(3):
         num, place, region, head, stand, _scene, _ll = MAINS[k]
         x0 = 14 + k * 250
-        card(img, x0, 188, 244, 176, tint(REGION[region], 0.88))
-        img.rect(x0, 188, 244, 4, REGION[region])
-        blit(img, x0 + 7, 196, 230, 88, art[num - 1])
+        card(img, x0, 144, 244, 176, tint(REGION[region], 0.88))
+        img.rect(x0, 144, 244, 4, REGION[region])
+        SCENES[_scene](img, x0 + 7, 152, 230, 88)
         pline = "%d. %s" % (num, place)
         if place in CLOCK_MAP:
             pline += " - " + CLOCK_MAP[place]
-        draw_text(img, x0 + 8, 288, pline, 1, REGION[region])
+        draw_text(img, x0 + 8, 244, pline, 1, REGION[region])
         for i, ln in enumerate(wrap_text(head, 228, 2)[:2]):
-            draw_text(img, x0 + 8, 300 + i * 17, ln, 2, INK)
+            draw_text(img, x0 + 8, 256 + i * 17, ln, 2, INK)
         for i, ln in enumerate(wrap_text(stand, 228, 1)[:3]):
-            draw_text(img, x0 + 8, 336 + i * 9, ln, 1, (90, 90, 96))
+            draw_text(img, x0 + 8, 292 + i * 9, ln, 1, (90, 90, 96))
 
     # nine mini stories, 3 x 3
     for k in range(3, 12):
         num, place, region, head, stand, _scene, _ll = MAINS[k]
         r, c = (k - 3) // 3, (k - 3) % 3
         x0 = 14 + c * 250
-        y0 = 370 + r * 86
+        y0 = 326 + r * 86
         card(img, x0, y0, 244, 80, tint(REGION[region], 0.88))
         img.rect(x0, y0, 244, 4, REGION[region])
-        blit(img, x0 + 6, y0 + 10, 70, 64, art[num - 1])
+        SCENES[_scene](img, x0 + 6, y0 + 10, 70, 64)
         pline = "%d. %s" % (num, place)
         if place in CLOCK_MAP:
             pline += " - " + CLOCK_MAP[place]
@@ -756,41 +983,43 @@ def build():
         for i, ln in enumerate(wrap_text(stand, 152, 1)[:2]):
             draw_text(img, x0 + 84, y0 + 50 + i * 9, ln, 1, (90, 90, 96))
 
-    # the world map, on the left; the other 28 stories, plain coloured
-    # text in one column on the right, no shapes
-    draw_text(img, 14, 628, "THE WORLD IN ONE LOOK - 12 MAIN STORIES MARKED", 1, NAVY)
-    draw_text(img, 414, 628, "ALSO ON THURSDAY 19 NOVEMBER 2026", 1, NAVY)
+    # the world map, smaller and calmer, on the left; the other 28 stories
+    # in two columns on the right, each item on two lines (place, then story)
+    draw_text(img, 14, 584, "THE WORLD IN ONE LOOK - 12 MAIN STORIES MARKED", 1, NAVY)
+    draw_text(img, 348, 584, "ALSO ON THURSDAY 19 NOVEMBER 2026", 1, NAVY)
     markers = [(m[0], m[6][0], m[6][1], m[2]) for m in MAINS if m[6] is not None]
-    draw_map(img, 14, 640, 390, 176, markers, BADGES)
+    draw_map(img, 14, 596, 320, 140, markers, [])
     for i, (num, place, region, head) in enumerate(REST):
-        y0 = 640 + i * 11
+        col = i // 14
+        row = i % 14
+        x0 = 348 + col * 210
+        y0 = 596 + row * 22
         num_s = "%d" % num
         pw = text_width(num_s, 1) + 6
-        pill(img, 414, y0 - 1, pw, 10, REGION[region])
-        draw_text(img, 414 + 3, y0, num_s, 1, (255, 255, 255))
-        px = 414 + pw + 4
+        pill(img, x0, y0 - 1, pw, 10, REGION[region])
+        draw_text(img, x0 + 3, y0, num_s, 1, (255, 255, 255))
+        px = x0 + pw + 4
         draw_text(img, px, y0, place, 1, REGION[region])
-        draw_text(img, px + text_width(place, 1), y0, " - %s" % head, 1, INK)
+        draw_text(img, px, y0 + 9, head, 1, INK)
 
-    # map key, under the map
-    card(img, 14, 822, 390, 144)
-    draw_text(img, 22, 830, "MAP KEY", 1, NAVY)
-    lx, ly = 22, 844
+    # map key, compact, under the map (no card)
+    draw_text(img, 14, 746, "MAP KEY", 1, NAVY)
+    lx, ly = 14, 760
     for region in ("ASIA", "EUROPE", "MIDEAST", "AMERICAS"):
         img.rect(lx, ly, 8, 8, REGION[region])
         lx += 11
         draw_text(img, lx, ly + 1, REGION_NAME[region], 1, INK)
         lx += text_width(REGION_NAME[region], 1) + 10
-    lx, ly = 22, 860
+    lx, ly = 14, 776
     for region in ("AFRICA", "OCEANIA", "GLOBAL"):
         img.rect(lx, ly, 8, 8, REGION[region])
         lx += 11
         draw_text(img, lx, ly + 1, REGION_NAME[region], 1, INK)
         lx += text_width(REGION_NAME[region], 1) + 10
-    draw_text(img, 22, 884, "Numbers on the map match the 12 main stories.", 1, (90, 90, 96))
-    draw_text(img, 22, 893, "All 40 stories are from 19 November 2026.", 1, (90, 90, 96))
-    draw_text(img, 22, 902, "Wires: Reuters, AP, BBC, AFP, Xinhua, IMD.", 1, (90, 90, 96))
-    draw_text(img, 22, 911, "Pictures and map: original, drawn in code.", 1, (90, 90, 96))
+    draw_text(img, 14, 800, "Numbers on the map match the 12 main stories.", 1, (90, 90, 96))
+    draw_text(img, 14, 809, "All 40 stories are from 19 November 2026.", 1, (90, 90, 96))
+    draw_text(img, 14, 818, "Wires: Reuters, AP, BBC, AFP, Xinhua, IMD.", 1, (90, 90, 96))
+    draw_text(img, 14, 827, "Pictures and map: original, drawn in code.", 1, (90, 90, 96))
 
     # date check + sources
     img.rect(14, 972, 740, 24, ROSE)
