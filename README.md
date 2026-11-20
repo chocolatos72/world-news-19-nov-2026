@@ -16,15 +16,22 @@ newspaper front page, 768x1024, summing up Thursday 19 November 2026:
   record IPO, the GTA VI launch, Cyclone Akvan, the PIF Tower strike, the
   Gaza peace-plan scorecard, the Kumamoto quake, Denmark's Arctic deal,
   Somalia expelling the UAE ambassador, and the Ethiopia-Eritrea border
-  flare-up. Each story card is tinted with its region's colour.
+  flare-up. The header band stays dark navy with the red date box and
+  the gold count box, as in the earlier version. The page is one flat
+  cream; every story sits in its own bordered box, and every illustrated
+  story carries a coloured label bar over a sharply bordered illustration.
+  The day's six big numbers are large red figures with thin rules between
+  them (no boxes). 37 stories (three list items were dropped to keep the
+  boxes readable).
 - A world map drawn from real longitude/latitude outlines, one muted colour
   per continent, with numbered markers for the 12 main stories (region
-  counts: Asia 17, Europe 11, Mideast 5, Americas 2, Africa 2, Oceania 2,
+  counts: Asia 16, Europe 10, Mideast 5, Americas 1, Africa 2, Oceania 2,
   Global 1).
-- The other 28 stories as a two-column list, each item on two lines (place,
-  then a short headline), its number inside a coloured pill and its place in
-  its continent's colour.
-- A date check and the day's sources.
+- The other 25 stories as a two-column list, each item in its own bordered
+  box on two lines (place, then a short headline), its number inside a
+  coloured pill and its place in its continent's colour.
+- A date check box, a line of stories left out as other days' news, and
+  the day's sources.
 
 ## Run it
 
@@ -36,8 +43,8 @@ OUTPUT=entry.png python3 main.py
 Deterministic: two runs write byte-identical files. The image is 768x1024
 PNG, well under the 1 MiB limit.
 
-## The 40 stories
+## The 37 stories
 
-All 40 stories were checked against wire reports of 19 November 2026
+All 37 stories were checked against wire reports of 19 November 2026
 (Reuters, AP, BBC, AFP, Xinhua, IMD, ESPNcricinfo and the day's wires).
 Claims that rest on a single source are worded as claims ("Iran says...").
