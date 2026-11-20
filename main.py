@@ -18,8 +18,8 @@ import zlib
 W, H = 768, 1024
 
 # ---------------------------------------------------------------- palette
-PAPER_TOP = (250, 238, 210)
-PAPER_BOT = (245, 228, 192)
+PAPER_TOP = (248, 236, 206)
+PAPER_BOT = (248, 236, 206)
 INK = (30, 36, 48)
 NAVY = (28, 58, 96)
 RED = (179, 39, 46)
@@ -818,13 +818,13 @@ def draw_map(img, x, y, w, h, markers, badges):
 # scene key, and (lon, lat) for the map marker (None = global, off map).
 MAINS = [
     (1, "SHENZHEN", "ASIA", "TRUMP, XI AND PUTIN MEET IN SHENZHEN",
-     "First-ever trilateral summit adopts a joint Peace Declaration - but no deal on Ukraine or Iran.",
+     "First trilateral adopts a Peace Declaration - no Ukraine or Iran deal.",
      "summit", (114.05, 22.55)),
     (2, "THE HAGUE", "EUROPE", "MYANMAR GUILTY OF ROHINGYA GENOCIDE",
-     "World court rules 9-6, the first genocide verdict against a state; orders reparations and return.",
+     "World court rules 9-6, first genocide verdict; orders reparations.",
      "justice", (4.3, 52.08)),
     (3, "KERCH", "EUROPE", "CRIMEAN BRIDGE HIT A THIRD TIME",
-     "Neptune missiles strike the rail section; train traffic halted, road span already down.",
+     "Neptune missiles hit the rail section; trains halted.",
      "bridge", (36.4, 45.3)),
     (4, "NEW YORK", "AMERICAS", "ANTHROPIC IPOS IN THE BIGGEST EVER",
      "Priced at $83; the AI firm raises $81.3B.",
@@ -858,36 +858,33 @@ MAINS = [
 # The other 28 stories: number, place, region, headline.
 REST = [
     (13, "SHENZHEN", "ASIA", "APEC closes in Shenzhen"),
-    (14, "SHENZHEN", "ASIA", "APEC CEOs' Initiative"),
-    (15, "TOKYO", "ASIA", "India-Japan naval mast deal"),
-    (16, "ANTALYA", "ASIA", "COP31 drops fossil fuels"),
-    (17, "ODISHA", "ASIA", "80,000+ flee as Akvan nears"),
-    (18, "DHAKA", "ASIA", "Awami lockdown, Yunus hit"),
-    (19, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free"),
-    (20, "SHENZHEN", "ASIA", "Trump-Xi Hormuz oil deal"),
-    (21, "SHENZHEN", "ASIA", "Trump-Putin meet 40 minutes"),
-    (22, "HANGZHOU", "ASIA", "Alibaba +10%, AI cloud +53%"),
-    (23, "PATIALA", "ASIA", "60m bridge falls, safe"),
-    (24, "SHENZHEN", "ASIA", "Takaichi: free Japanese"),
-    (25, "JAKARTA", "ASIA", "Parliament passes new law"),
-    (26, "MANILA", "ASIA", "US unveils $2B defence loans"),
-    (27, "GAZA", "MIDEAST", "Israel ends Gaza operation"),
-    (28, "WEST BANK", "MIDEAST", "Israel delays E1 settlement"),
-    (29, "HORMUZ", "MIDEAST", "Iran: tankers hit mines"),
-    (30, "PARIS", "EUROPE", "Data centres +70% by 2030"),
-    (31, "MADRID", "EUROPE", "Migrants drove GDP growth"),
-    (32, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m"),
-    (33, "FRANKFURT", "EUROPE", "Deutsche $582m Epstein"),
-    (34, "ZURICH", "EUROPE", "Infantino faces challengers"),
-    (35, "TURIN", "EUROPE", "Shelton beats Jodar"),
-    (36, "KYIV", "EUROPE", "Russia fires 98 drones"),
-    (37, "BERLIN", "EUROPE", "UK gives GBP 260m Kyiv aid"),
-    (38, "BENTONVILLE", "AMERICAS", "Walmart Q3 beats estimates"),
-    (39, "WELLINGTON", "OCEANIA", "NZ 243/5, Nicholls 113"),
-    (40, "SUVA", "OCEANIA", "Fiji drought disaster"),
+    (14, "TOKYO", "ASIA", "India-Japan naval mast deal"),
+    (15, "ANTALYA", "ASIA", "COP31 drops fossil fuels"),
+    (16, "ODISHA", "ASIA", "80,000+ flee as Akvan nears"),
+    (17, "DHAKA", "ASIA", "Awami lockdown, Yunus hit"),
+    (18, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free"),
+    (19, "SHENZHEN", "ASIA", "Trump-Xi Hormuz oil deal"),
+    (20, "SHENZHEN", "ASIA", "Trump-Putin meet 40 minutes"),
+    (21, "HANGZHOU", "ASIA", "Alibaba +10%, AI cloud +53%"),
+    (22, "PATIALA", "ASIA", "60m bridge falls, safe"),
+    (23, "SHENZHEN", "ASIA", "Takaichi: free Japanese"),
+    (24, "JAKARTA", "ASIA", "Parliament passes new law"),
+    (25, "MANILA", "ASIA", "US unveils $2B defence loans"),
+    (26, "GAZA", "MIDEAST", "Israel ends Gaza operation"),
+    (27, "WEST BANK", "MIDEAST", "Israel delays E1 settlement"),
+    (28, "HORMUZ", "MIDEAST", "Iran: tankers hit mines"),
+    (29, "PARIS", "EUROPE", "Data centres +70% by 2030"),
+    (30, "MADRID", "EUROPE", "Migrants drove GDP growth"),
+    (31, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m"),
+    (32, "FRANKFURT", "EUROPE", "Deutsche $582m Epstein"),
+    (33, "ZURICH", "EUROPE", "Infantino faces challengers"),
+    (34, "KYIV", "EUROPE", "Russia fires 98 drones"),
+    (35, "BERLIN", "EUROPE", "UK gives GBP 260m Kyiv aid"),
+    (36, "WELLINGTON", "OCEANIA", "NZ 243/5, Nicholls 113"),
+    (37, "SUVA", "OCEANIA", "Fiji drought disaster"),
 ]
 
-COUNTS = {"ASIA": 17, "EUROPE": 11, "MIDEAST": 5, "AMERICAS": 2,
+COUNTS = {"ASIA": 16, "EUROPE": 10, "MIDEAST": 5, "AMERICAS": 1,
           "AFRICA": 2, "OCEANIA": 2, "GLOBAL": 1}
 
 BADGES = [
@@ -907,15 +904,16 @@ def card(img, x, y, w, h, fill=(255, 255, 255)):
 
 def build():
     img = Img(W, H, PAPER_TOP, PAPER_BOT)
+    RULE = (150, 150, 150)
 
-    # masthead band in dark blue, with the red date box, gold count box,
-    # and a short tagline under the title
+    # ---- header band in dark blue, colour unchanged: red date box,
+    # ---- gold count box (now 37 stories), THE WORLD in white, TODAY gold
     img.rect(14, 12, 740, 52, NAVY)
     img.rect(14, 12, 150, 52, RED)
     draw_text(img, 14 + (150 - text_width("THURSDAY", 2)) // 2, 20, "THURSDAY", 2, (255, 255, 255))
     draw_text(img, 14 + (150 - text_width("19 NOV 2026", 2)) // 2, 44, "19 NOV 2026", 2, (255, 255, 255))
     img.rect(604, 12, 150, 52, GOLD)
-    draw_text(img, 604 + (150 - text_width("40", 3)) // 2, 14, "40", 3, NAVY)
+    draw_text(img, 604 + (150 - text_width("37", 3)) // 2, 14, "37", 3, NAVY)
     draw_text(img, 604 + (150 - text_width("STORIES", 1)) // 2, 40, "STORIES", 1, NAVY)
     t1, t2 = "THE WORLD ", "TODAY"
     total = text_width(t1, 3) + text_width(t2, 3)
@@ -927,16 +925,23 @@ def build():
     img.rect(164, 54, 440, 3, RED)
     img.rect(164, 59, 440, 1, GOLD)
 
-    # the day in numbers: six big stats, one per top story
+    # ---- the day in numbers: big red figures, no boxes, thin rules between
+    widths = []
+    base = 740 // 6
+    rem = 740 % 6
+    for i in range(6):
+        widths.append(base + 1 if i < rem else base)
+    cx = 14
     for i, (num, l1, l2, region) in enumerate(STATS):
-        x0 = 14 + i * 123
-        card(img, x0, 70, 118, 40, tint(REGION[region], 0.88))
-        img.rect(x0, 70, 118, 3, (200, 30, 30))
-        draw_text(img, x0 + (118 - text_width(num, 2)) // 2, 74, num, 2, (200, 30, 30))
-        draw_text(img, x0 + (118 - text_width(l1, 1)) // 2, 90, l1, 1, INK)
-        draw_text(img, x0 + (118 - text_width(l2, 1)) // 2, 99, l2, 1, (90, 90, 96))
+        wcell = widths[i]
+        draw_text(img, cx + (wcell - text_width(num, 2)) // 2, 74, num, 2, RED)
+        draw_text(img, cx + (wcell - text_width(l1, 1)) // 2, 92, l1, 1, INK)
+        draw_text(img, cx + (wcell - text_width(l2, 1)) // 2, 101, l2, 1, (90, 90, 96))
+        cx += wcell
+        if i < 5:
+            img.rect(cx, 74, 1, 36, RULE)
 
-    # region chips, counts sum to exactly 40, fitted to the full width
+    # ---- region chips, counts sum to exactly 37, fitted to the full width
     widths = []
     base = (740 - 6 * 6) // 7
     rem = (740 - 6 * 6) % 7
@@ -945,55 +950,74 @@ def build():
     cx = 14
     for i, region in enumerate(("ASIA", "EUROPE", "MIDEAST", "AMERICAS", "AFRICA", "OCEANIA", "GLOBAL")):
         label = "%s %d" % (REGION_NAME[region], COUNTS[region])
-        img.rect(cx, 116, widths[i], 22, REGION[region])
-        draw_text(img, cx + (widths[i] - text_width(label, 1)) // 2, 122, label, 1, (255, 255, 255))
+        img.rect(cx, 120, widths[i], 22, REGION[region])
+        draw_text(img, cx + (widths[i] - text_width(label, 1)) // 2, 126, label, 1, (255, 255, 255))
         cx += widths[i] + 6
 
-    # the three big main stories, side by side and level, with roomy scenes
+    # ---- the three big main stories, each in its own 2px-bordered box:
+    # ---- label bar, big illustration with its own sharp border, then text
     for k in range(3):
         num, place, region, head, stand, _scene, _ll = MAINS[k]
         x0 = 14 + k * 250
-        card(img, x0, 144, 244, 176, tint(REGION[region], 0.88))
-        img.rect(x0, 144, 244, 4, REGION[region])
-        SCENES[_scene](img, x0 + 7, 152, 230, 88)
+        y0 = 148
+        img.rect(x0, y0, 244, 2, INK)
+        img.rect(x0, y0 + 214, 244, 2, INK)
+        img.rect(x0, y0, 2, 216, INK)
+        img.rect(x0 + 242, y0, 2, 216, INK)
+        lab = "%s - %s" % (place, {"SHENZHEN": "SUMMIT", "THE HAGUE": "JUSTICE", "KERCH": "BRIDGE"}[place])
+        img.rect(x0 + 2, y0 + 2, 240, 16, REGION[region])
+        draw_text(img, x0 + 2 + (240 - text_width(lab, 1)) // 2, y0 + 6, lab, 1, (255, 255, 255))
+        SCENES[_scene](img, x0 + 7, y0 + 20, 230, 118)
+        img.rect(x0 + 7, y0 + 20, 230, 1, INK)
+        img.rect(x0 + 7, y0 + 137, 230, 1, INK)
+        img.rect(x0 + 7, y0 + 20, 1, 118, INK)
+        img.rect(x0 + 236, y0 + 20, 1, 118, INK)
         pline = "%d. %s" % (num, place)
         if place in CLOCK_MAP:
             pline += " - " + CLOCK_MAP[place]
-        draw_text(img, x0 + 8, 244, pline, 1, REGION[region])
-        for i, ln in enumerate(wrap_text(head, 228, 2)[:2]):
-            draw_text(img, x0 + 8, 256 + i * 17, ln, 2, INK)
-        for i, ln in enumerate(wrap_text(stand, 228, 1)[:3]):
-            draw_text(img, x0 + 8, 292 + i * 9, ln, 1, (90, 90, 96))
+        draw_text(img, x0 + 7, y0 + 144, pline, 1, REGION[region])
+        for i, ln in enumerate(wrap_text(head, 230, 2)[:2]):
+            draw_text(img, x0 + 7, y0 + 156 + i * 17, ln, 2, INK)
+        for i, ln in enumerate(wrap_text(stand, 230, 1)[:2]):
+            draw_text(img, x0 + 7, y0 + 192 + i * 9, ln, 1, (90, 90, 96))
 
-    # nine mini stories, 3 x 3
+    # ---- nine mini stories, each in its own bordered box with a label bar
     for k in range(3, 12):
         num, place, region, head, stand, _scene, _ll = MAINS[k]
         r, c = (k - 3) // 3, (k - 3) % 3
         x0 = 14 + c * 250
-        y0 = 326 + r * 86
-        card(img, x0, y0, 244, 80, tint(REGION[region], 0.88))
-        img.rect(x0, y0, 244, 4, REGION[region])
-        SCENES[_scene](img, x0 + 6, y0 + 10, 70, 64)
-        pline = "%d. %s" % (num, place)
+        y0 = 370 + r * 86
+        img.rect(x0, y0, 244, 1, INK)
+        img.rect(x0, y0 + 79, 244, 1, INK)
+        img.rect(x0, y0, 1, 80, INK)
+        img.rect(x0 + 243, y0, 1, 80, INK)
+        lab = "%d. %s" % (num, place)
         if place in CLOCK_MAP:
-            pline += " - " + CLOCK_MAP[place]
-        draw_text(img, x0 + 84, y0 + 10, pline, 1, REGION[region])
+            lab += " - " + CLOCK_MAP[place]
+        img.rect(x0 + 1, y0 + 1, 242, 13, REGION[region])
+        draw_text(img, x0 + 1 + (242 - text_width(lab, 1)) // 2, y0 + 4, lab, 1, (255, 255, 255))
+        SCENES[_scene](img, x0 + 6, y0 + 18, 70, 56)
+        img.rect(x0 + 6, y0 + 18, 70, 1, INK)
+        img.rect(x0 + 6, y0 + 73, 70, 1, INK)
+        img.rect(x0 + 6, y0 + 18, 1, 56, INK)
+        img.rect(x0 + 75, y0 + 18, 1, 56, INK)
         for i, ln in enumerate(wrap_text(head, 152, 1)[:3]):
-            draw_text(img, x0 + 84, y0 + 22 + i * 9, ln, 1, INK)
+            draw_text(img, x0 + 84, y0 + 18 + i * 9, ln, 1, INK)
         for i, ln in enumerate(wrap_text(stand, 152, 1)[:2]):
-            draw_text(img, x0 + 84, y0 + 50 + i * 9, ln, 1, (90, 90, 96))
+            draw_text(img, x0 + 84, y0 + 48 + i * 9, ln, 1, (90, 90, 96))
 
-    # the world map, smaller and calmer, on the left; the other 28 stories
-    # in two columns on the right, each item on two lines (place, then story)
-    draw_text(img, 14, 584, "THE WORLD IN ONE LOOK - 12 MAIN STORIES MARKED", 1, NAVY)
-    draw_text(img, 348, 584, "ALSO ON THURSDAY 19 NOVEMBER 2026", 1, NAVY)
+    # ---- where it happened: map left, the other 25 stories right,
+    # ---- two columns, each item in its own bordered box, two lines
+    img.rect(14, 628, 740, 1, RULE)
+    draw_text(img, 14, 634, "THE WORLD IN ONE LOOK - 12 MAIN STORIES MARKED", 1, NAVY)
+    draw_text(img, 348, 634, "ALSO ON THURSDAY 19 NOVEMBER 2026", 1, NAVY)
     markers = [(m[0], m[6][0], m[6][1], m[2]) for m in MAINS if m[6] is not None]
-    draw_map(img, 14, 596, 320, 140, markers, [])
+    draw_map(img, 14, 646, 320, 200, markers, [])
     for i, (num, place, region, head) in enumerate(REST):
-        col = i // 14
-        row = i % 14
+        col = i // 13
+        row = i % 13
         x0 = 348 + col * 210
-        y0 = 596 + row * 22
+        y0 = 646 + row * 22
         num_s = "%d" % num
         pw = text_width(num_s, 1) + 6
         pill(img, x0, y0 - 1, pw, 10, REGION[region])
@@ -1001,33 +1025,38 @@ def build():
         px = x0 + pw + 4
         draw_text(img, px, y0, place, 1, REGION[region])
         draw_text(img, px, y0 + 9, head, 1, INK)
+    img.rect(341, 646, 1, 284, RULE)
 
-    # map key, compact, under the map (no card)
-    draw_text(img, 14, 746, "MAP KEY", 1, NAVY)
-    lx, ly = 14, 760
+    # ---- map key, compact, under the map (no card)
+    draw_text(img, 14, 856, "MAP KEY", 1, NAVY)
+    lx, ly = 14, 870
     for region in ("ASIA", "EUROPE", "MIDEAST", "AMERICAS"):
         img.rect(lx, ly, 8, 8, REGION[region])
         lx += 11
         draw_text(img, lx, ly + 1, REGION_NAME[region], 1, INK)
         lx += text_width(REGION_NAME[region], 1) + 10
-    lx, ly = 14, 776
+    lx, ly = 14, 886
     for region in ("AFRICA", "OCEANIA", "GLOBAL"):
         img.rect(lx, ly, 8, 8, REGION[region])
         lx += 11
         draw_text(img, lx, ly + 1, REGION_NAME[region], 1, INK)
         lx += text_width(REGION_NAME[region], 1) + 10
-    draw_text(img, 14, 800, "Numbers on the map match the 12 main stories.", 1, (90, 90, 96))
-    draw_text(img, 14, 809, "All 40 stories are from 19 November 2026.", 1, (90, 90, 96))
-    draw_text(img, 14, 818, "Wires: Reuters, AP, BBC, AFP, Xinhua, IMD.", 1, (90, 90, 96))
-    draw_text(img, 14, 827, "Pictures and map: original, drawn in code.", 1, (90, 90, 96))
+    draw_text(img, 14, 910, "Numbers on the map match the 12 main stories.", 1, (90, 90, 96))
+    draw_text(img, 14, 919, "All 37 stories are from 19 November 2026.", 1, (90, 90, 96))
+    draw_text(img, 14, 928, "Wires: Reuters, AP, BBC, AFP, Xinhua, IMD.", 1, (90, 90, 96))
+    draw_text(img, 14, 937, "Pictures and map: original, drawn in code.", 1, (90, 90, 96))
 
-    # date check + sources
-    img.rect(14, 972, 740, 24, ROSE)
-    dc = "DATE CHECK - Every story is from 19 November 2026 wires and briefs; 'says' means the claim is unconfirmed."
-    draw_text(img, (W - text_width(dc, 1)) // 2, 980, dc, 1, INK)
+    # ---- date check box + left-out line + sources
+    img.rect(14, 962, 740, 36, INK)
+    img.rect(15, 963, 738, 34, PAPER_TOP)
+    dc = "DATE CHECK - Every story on this page happened, or was first reported, on Thursday 19 November 2026."
+    draw_text(img, 22, 970, dc, 1, INK)
+    lo = "LEFT OUT AS OTHER DAYS' NEWS: 18 NOV - EU Ukraine loan, Iran fires, Nvidia results; 20 NOV - COP31 close, Akvan landfall."
+    draw_text(img, 22, 982, lo, 1, (90, 90, 96))
     foot = "Sources: Reuters, AP, BBC, AFP, Xinhua, IMD, ESPNcricinfo and the day's wires - 19 November 2026"
-    draw_text(img, (W - text_width(foot, 1)) // 2, 1002, foot, 1, (70, 80, 95))
+    draw_text(img, (W - text_width(foot, 1)) // 2, 1006, foot, 1, (70, 80, 95))
     return img
+
 
 
 def main():
