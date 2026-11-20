@@ -18,25 +18,27 @@ import zlib
 W, H = 768, 1024
 
 # ---------------------------------------------------------------- palette
-PAPER_TOP = (248, 236, 206)
-PAPER_BOT = (248, 236, 206)
+PAPER_TOP = (232, 218, 186)
+PAPER_BOT = (232, 218, 186)
 INK = (30, 36, 48)
 NAVY = (28, 58, 96)
-RED = (179, 39, 46)
-GOLD = (232, 180, 40)
+RED = (160, 45, 50)
+GOLD = (210, 160, 45)
 CREAM = (255, 255, 255)
 ROSE = (242, 218, 140)
-OCEAN = (110, 165, 210)
+OCEAN = (100, 150, 195)
 GRID = (200, 210, 220)
+MAP_OCEAN = (226, 227, 229)
+MAP_LAND = (196, 191, 176)
 
 REGION = {
-    "ASIA": (205, 60, 60),
-    "EUROPE": (60, 110, 190),
-    "MIDEAST": (185, 130, 40),
-    "AMERICAS": (50, 150, 85),
-    "AFRICA": (175, 110, 55),
-    "OCEANIA": (135, 95, 180),
-    "GLOBAL": (40, 65, 100),
+    "ASIA": (185, 55, 55),
+    "EUROPE": (55, 100, 170),
+    "MIDEAST": (170, 120, 40),
+    "AMERICAS": (45, 135, 75),
+    "AFRICA": (160, 100, 50),
+    "OCEANIA": (120, 85, 165),
+    "GLOBAL": (35, 60, 90),
 }
 REGION_NAME = {
     "ASIA": "ASIA", "EUROPE": "EUROPE", "MIDEAST": "MIDEAST",
@@ -788,22 +790,23 @@ def project(x, y, w, h, lon, lat):
 
 def draw_map(img, x, y, w, h, markers, badges):
     """markers: list of (number, lon, lat, region); badges: list of (region, count, lon, lat)."""
-    img.rect(x, y, w, h, OCEAN)
+    img.rect(x, y, w, h, MAP_OCEAN)
     for poly_ll, region in LAND:
         pts = [project(x, y, w, h, lon, lat) for lon, lat in poly_ll]
-        img.poly(pts, REGION[region])
-    # graticule, light
+        img.poly(pts, MAP_LAND)
+    # graticule, light grey
     for lon in range(-150, 151, 30):
         px = x + int((lon + 180.0) / 360.0 * w)
         for yy in range(y, y + h, 4):
-            img.set(px, yy, (255, 255, 255))
-    # story dots
+            img.set(px, yy, (175, 175, 175))
+    # story dots: white square with a dark edge, the number itself in the
+    # region colour - no round or oval shapes
     for num, lon, lat, region in markers:
         cx, cy = project(x, y, w, h, lon, lat)
-        img.circle(cx, cy, 6, (255, 255, 255))
-        img.circle(cx, cy, 5, REGION[region])
+        img.rect(cx - 6, cy - 6, 13, 13, INK)
+        img.rect(cx - 5, cy - 5, 11, 11, (255, 255, 255))
         s = str(num)
-        draw_text(img, cx - text_width(s, 1) // 2, cy - 3, s, 1, (255, 255, 255))
+        draw_text(img, cx - text_width(s, 1) // 2, cy - 3, s, 1, REGION[region])
     # ring badges: stories per region
     for region, count, lon, lat in badges:
         cx, cy = project(x, y, w, h, lon, lat)
@@ -858,33 +861,36 @@ MAINS = [
 # The other 28 stories: number, place, region, headline.
 REST = [
     (13, "SHENZHEN", "ASIA", "APEC closes in Shenzhen"),
-    (14, "TOKYO", "ASIA", "India-Japan naval mast deal"),
-    (15, "ANTALYA", "ASIA", "COP31 drops fossil fuels"),
-    (16, "ODISHA", "ASIA", "80,000+ flee as Akvan nears"),
-    (17, "DHAKA", "ASIA", "Awami lockdown, Yunus hit"),
-    (18, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free"),
-    (19, "SHENZHEN", "ASIA", "Trump-Xi Hormuz oil deal"),
-    (20, "SHENZHEN", "ASIA", "Trump-Putin meet 40 minutes"),
-    (21, "HANGZHOU", "ASIA", "Alibaba +10%, AI cloud +53%"),
-    (22, "PATIALA", "ASIA", "60m bridge falls, safe"),
-    (23, "SHENZHEN", "ASIA", "Takaichi: free Japanese"),
-    (24, "JAKARTA", "ASIA", "Parliament passes new law"),
-    (25, "MANILA", "ASIA", "US unveils $2B defence loans"),
-    (26, "GAZA", "MIDEAST", "Israel ends Gaza operation"),
-    (27, "WEST BANK", "MIDEAST", "Israel delays E1 settlement"),
-    (28, "HORMUZ", "MIDEAST", "Iran: tankers hit mines"),
-    (29, "PARIS", "EUROPE", "Data centres +70% by 2030"),
-    (30, "MADRID", "EUROPE", "Migrants drove GDP growth"),
-    (31, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m"),
-    (32, "FRANKFURT", "EUROPE", "Deutsche $582m Epstein"),
-    (33, "ZURICH", "EUROPE", "Infantino faces challengers"),
-    (34, "KYIV", "EUROPE", "Russia fires 98 drones"),
-    (35, "BERLIN", "EUROPE", "UK gives GBP 260m Kyiv aid"),
-    (36, "WELLINGTON", "OCEANIA", "NZ 243/5, Nicholls 113"),
-    (37, "SUVA", "OCEANIA", "Fiji drought disaster"),
+    (14, "SHENZHEN", "ASIA", "APEC CEOs' Initiative"),
+    (15, "TOKYO", "ASIA", "India-Japan naval mast deal"),
+    (16, "ANTALYA", "ASIA", "COP31 drops fossil fuels"),
+    (17, "ODISHA", "ASIA", "80,000+ flee as Akvan nears"),
+    (18, "DHAKA", "ASIA", "Awami lockdown, Yunus hit"),
+    (19, "KUALA LUMPUR", "ASIA", "Malaysia ends visa-free"),
+    (20, "SHENZHEN", "ASIA", "Trump-Xi Hormuz oil deal"),
+    (21, "SHENZHEN", "ASIA", "Trump-Putin meet 40 minutes"),
+    (22, "HANGZHOU", "ASIA", "Alibaba +10%, AI cloud +53%"),
+    (23, "PATIALA", "ASIA", "60m bridge falls, safe"),
+    (24, "SHENZHEN", "ASIA", "Takaichi: free Japanese"),
+    (25, "JAKARTA", "ASIA", "Parliament passes new law"),
+    (26, "MANILA", "ASIA", "US unveils $2B defence loans"),
+    (27, "GAZA", "MIDEAST", "Israel ends Gaza operation"),
+    (28, "WEST BANK", "MIDEAST", "Israel delays E1 settlement"),
+    (29, "HORMUZ", "MIDEAST", "Iran: tankers hit mines"),
+    (30, "PARIS", "EUROPE", "Data centres +70% by 2030"),
+    (31, "MADRID", "EUROPE", "Migrants drove GDP growth"),
+    (32, "FRANKFURT", "EUROPE", "Deutsche hid EUR 800m"),
+    (33, "FRANKFURT", "EUROPE", "Deutsche $582m Epstein"),
+    (34, "ZURICH", "EUROPE", "Infantino faces challengers"),
+    (35, "TURIN", "EUROPE", "Shelton beats Jodar"),
+    (36, "KYIV", "EUROPE", "Russia fires 98 drones"),
+    (37, "BERLIN", "EUROPE", "UK gives GBP 260m Kyiv aid"),
+    (38, "BENTONVILLE", "AMERICAS", "Walmart Q3 beats estimates"),
+    (39, "WELLINGTON", "OCEANIA", "NZ 243/5, Nicholls 113"),
+    (40, "SUVA", "OCEANIA", "Fiji drought disaster"),
 ]
 
-COUNTS = {"ASIA": 16, "EUROPE": 10, "MIDEAST": 5, "AMERICAS": 1,
+COUNTS = {"ASIA": 17, "EUROPE": 11, "MIDEAST": 5, "AMERICAS": 2,
           "AFRICA": 2, "OCEANIA": 2, "GLOBAL": 1}
 
 BADGES = [
@@ -906,24 +912,20 @@ def build():
     img = Img(W, H, PAPER_TOP, PAPER_BOT)
     RULE = (150, 150, 150)
 
-    # ---- header band in dark blue, colour unchanged: red date box,
-    # ---- gold count box (now 37 stories), THE WORLD in white, TODAY gold
-    img.rect(14, 12, 740, 52, NAVY)
-    img.rect(14, 12, 150, 52, RED)
-    draw_text(img, 14 + (150 - text_width("THURSDAY", 2)) // 2, 20, "THURSDAY", 2, (255, 255, 255))
-    draw_text(img, 14 + (150 - text_width("19 NOV 2026", 2)) // 2, 44, "19 NOV 2026", 2, (255, 255, 255))
-    img.rect(604, 12, 150, 52, GOLD)
-    draw_text(img, 604 + (150 - text_width("37", 3)) // 2, 14, "37", 3, NAVY)
-    draw_text(img, 604 + (150 - text_width("STORIES", 1)) // 2, 40, "STORIES", 1, NAVY)
+    # ---- clean masthead, no navy band: title in ink with a red TODAY,
+    # ---- date and count in one line, red + gold rules for a touch of colour
     t1, t2 = "THE WORLD ", "TODAY"
     total = text_width(t1, 3) + text_width(t2, 3)
     mx = (W - total) // 2
-    draw_text(img, mx, 14, t1, 3, (255, 255, 255))
-    draw_text(img, mx + text_width(t1, 3), 14, t2, 3, GOLD)
-    tag = "Trump, Xi, Putin meet - ICJ: Myanmar guilty - Akvan nears India"
-    draw_text(img, (W - text_width(tag, 1)) // 2, 40, tag, 1, (255, 255, 255))
-    img.rect(164, 54, 440, 3, RED)
-    img.rect(164, 59, 440, 1, GOLD)
+    draw_text(img, mx, 14, t1, 3, INK)
+    draw_text(img, mx + text_width(t1, 3), 14, t2, 3, RED)
+    d1, d2 = "THURSDAY 19 NOVEMBER 2026  -  ", "40 STORIES"
+    total2 = text_width(d1, 1) + text_width(d2, 1)
+    mx2 = (W - total2) // 2
+    draw_text(img, mx2, 44, d1, 1, (90, 90, 96))
+    draw_text(img, mx2 + text_width(d1, 1), 44, d2, 1, RED)
+    img.rect(164, 58, 440, 3, RED)
+    img.rect(164, 63, 440, 1, GOLD)
 
     # ---- the day in numbers: big red figures, no boxes, thin rules between
     widths = []
@@ -941,7 +943,7 @@ def build():
         if i < 5:
             img.rect(cx, 74, 1, 36, RULE)
 
-    # ---- region chips, counts sum to exactly 37, fitted to the full width
+    # ---- region chips, counts sum to exactly 40, fitted to the full width
     widths = []
     base = (740 - 6 * 6) // 7
     rem = (740 - 6 * 6) % 7
@@ -1014,13 +1016,13 @@ def build():
     markers = [(m[0], m[6][0], m[6][1], m[2]) for m in MAINS if m[6] is not None]
     draw_map(img, 14, 646, 320, 200, markers, [])
     for i, (num, place, region, head) in enumerate(REST):
-        col = i // 13
-        row = i % 13
+        col = i // 14
+        row = i % 14
         x0 = 348 + col * 210
         y0 = 646 + row * 22
         num_s = "%d" % num
         pw = text_width(num_s, 1) + 6
-        pill(img, x0, y0 - 1, pw, 10, REGION[region])
+        img.rect(x0, y0 - 1, pw, 10, REGION[region])
         draw_text(img, x0 + 3, y0, num_s, 1, (255, 255, 255))
         px = x0 + pw + 4
         draw_text(img, px, y0, place, 1, REGION[region])
@@ -1042,7 +1044,7 @@ def build():
         draw_text(img, lx, ly + 1, REGION_NAME[region], 1, INK)
         lx += text_width(REGION_NAME[region], 1) + 10
     draw_text(img, 14, 910, "Numbers on the map match the 12 main stories.", 1, (90, 90, 96))
-    draw_text(img, 14, 919, "All 37 stories are from 19 November 2026.", 1, (90, 90, 96))
+    draw_text(img, 14, 919, "All 40 stories are from 19 November 2026.", 1, (90, 90, 96))
     draw_text(img, 14, 928, "Wires: Reuters, AP, BBC, AFP, Xinhua, IMD.", 1, (90, 90, 96))
     draw_text(img, 14, 937, "Pictures and map: original, drawn in code.", 1, (90, 90, 96))
 
